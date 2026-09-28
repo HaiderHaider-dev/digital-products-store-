@@ -167,38 +167,68 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         {filteredProducts.map((product) => {
           const isDownloaded = downloadedIds.includes(product.id);
           const isDownloading = downloadingIds.includes(product.id);
+          const isFullWidth = product.isFullWidth;
+
           return (
             <div
               key={product.id}
               onClick={() => setActiveProductDetail(product)}
-              className="group relative bg-[#090909] border border-neutral-850 hover:border-neutral-700 rounded-xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 cursor-pointer"
+              className={`group relative rounded-xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 cursor-pointer ${
+                isFullWidth
+                  ? 'md:col-span-2 lg:col-span-3 bg-gradient-to-r from-[#170e06] via-[#0b0a09] to-[#170e06] border-2 border-[#E58A36]/50 hover:border-[#E58A36] shadow-lg shadow-[#E58A36]/5'
+                  : 'bg-[#090909] border border-neutral-850 hover:border-neutral-700'
+              }`}
             >
               <div>
-                {/* Meta row: Category and Platform */}
-                <div className="flex items-center justify-between text-xs text-neutral-400 mb-3">
-                  <span className="text-[#E58A36] font-medium tracking-wide">
-                    {product.category}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Bot className="w-3 h-3" />
+                {/* Meta row: Category, Badge and Platform */}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-400 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#E58A36] font-medium tracking-wide">
+                      {product.category}
+                    </span>
+                    {product.badge && (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        isFullWidth
+                          ? 'bg-[#E58A36] text-black'
+                          : 'bg-[#E58A36]/15 text-[#E58A36] border border-[#E58A36]/30'
+                      }`}>
+                        {isFullWidth && <Sparkles className="w-3 h-3 text-black" />}
+                        {product.badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className="flex items-center gap-1 text-neutral-400">
+                    <Bot className="w-3.5 h-3.5 text-[#E58A36]" />
                     {product.platform.split(' — ')[0].split(' or ')[0]}
                   </span>
                 </div>
 
                 {/* Title */}
-                <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-[#E58A36] transition-colors leading-snug">
+                <h3 className={`font-bold text-white group-hover:text-[#E58A36] transition-colors leading-snug ${
+                  isFullWidth ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
+                }`}>
                   {product.title}
                 </h3>
 
                 {/* Description */}
-                <p className="text-neutral-400 text-xs sm:text-sm font-normal leading-relaxed mt-2.5 mb-4">
+                <p className={`text-neutral-300 font-normal leading-relaxed mt-2.5 mb-4 ${
+                  isFullWidth ? 'text-sm sm:text-base max-w-4xl' : 'text-xs sm:text-sm text-neutral-400'
+                }`}>
                   {product.description}
                 </p>
 
-                {/* Earning Potential Badge */}
-                <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold px-2.5 py-1 rounded-md mb-4">
-                  <DollarSign className="w-3 h-3" />
-                  <span>Earn {product.earningPotential}</span>
+                {/* Badges row */}
+                <div className="flex flex-wrap items-center gap-2.5 mb-4">
+                  <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold px-2.5 py-1 rounded-md">
+                    <DollarSign className="w-3 h-3" />
+                    <span>Earn {product.earningPotential}</span>
+                  </div>
+
+                  {isFullWidth && (
+                    <div className="inline-flex items-center gap-1.5 bg-neutral-900 text-neutral-300 text-[11px] font-medium px-2.5 py-1 rounded-md border border-neutral-800">
+                      <span>Complete 10-Phase AI Coaching Framework</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Platform Info */}
@@ -209,9 +239,9 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
               </div>
 
               {/* Price & Action row */}
-              <div className="pt-4 border-t border-neutral-900 flex items-center justify-between">
+              <div className="pt-4 border-t border-neutral-900 flex items-center justify-between mt-2">
                 <div>
-                  <span className="text-xl font-bold text-white tabular-nums">
+                  <span className={`font-bold text-white tabular-nums ${isFullWidth ? 'text-2xl' : 'text-xl'}`}>
                     ${product.price}
                   </span>
                   <span className="text-xs text-neutral-500 ml-1.5">one-time</span>
@@ -221,12 +251,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   <button
                     onClick={(e) => handleBuyClick(product, e)}
                     disabled={isDownloading}
-                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-md flex items-center gap-1.5 transition-all ${
+                    className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-md flex items-center gap-1.5 transition-all ${
                       isDownloading
                         ? 'bg-neutral-800 text-neutral-400 cursor-wait'
                         : isAdmin && isDownloaded
                           ? 'bg-neutral-800 text-emerald-400 hover:bg-neutral-700 cursor-pointer'
-                          : 'bg-white hover:bg-neutral-200 text-black active:scale-95 cursor-pointer'
+                          : isFullWidth
+                            ? 'bg-[#E58A36] hover:bg-[#F29543] text-black active:scale-95 cursor-pointer shadow-md'
+                            : 'bg-white hover:bg-neutral-200 text-black active:scale-95 cursor-pointer'
                     }`}
                   >
                     {isDownloading ? (
@@ -247,7 +279,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     ) : (
                       <>
                         <ShoppingCart className="w-3.5 h-3.5" />
-                        <span>Buy Now</span>
+                        <span>Buy Now — ${product.price}</span>
                       </>
                     )}
                   </button>

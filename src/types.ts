@@ -11,6 +11,7 @@ export interface Product {
   platform: string;
   earningPotential: string;
   promptPreview: string;
+  isFullWidth?: boolean;
 }
 
 export interface SlideData {
