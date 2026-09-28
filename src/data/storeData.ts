@@ -44,7 +44,7 @@ export const PRODUCTS: Product[] = [
     id: 'prompt-1',
     title: 'SEO Blog Article Generator',
     category: 'AI Tools',
-    price: 2,
+    price: 0,
     rating: 4.9,
     downloads: '12.8k',
     description: 'Generate fully optimized 2,000+ word SEO blog articles with proper H1-H4 structure, internal linking suggestions, meta descriptions, and keyword density targeting. Sell on Fiverr, Upwork, or directly to small business owners.',
