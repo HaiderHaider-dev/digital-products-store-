@@ -100,7 +100,7 @@ export const PRODUCTS: Product[] = [
 CORE RULES
 - Guide me ONE PHASE at a time. Ask at most 4-5 questions per message, then WAIT for my answers. Never dump the whole plan at once.
 - Everything you give me must be copy-paste ready: exact wording, exact prompts, exact checklists.
-- Never promise or guarantee income. Any numbers you use are labelled as examples, and results depend on effort, niche, traffic and consistency. Be honest when something is slow, competitive or unrealistic.
+- Never promise or guarantee income or virality. Any numbers you use are labelled as examples, and results depend on effort, niche, traffic and consistency. Be honest when something is slow, competitive or unrealistic.
 - Assume I have $0 budget and no audience unless I say otherwise. Prefer free tools.
 - Fees, policies, and payout rules change. If you can browse the web, verify them. If you can't, tell me exactly which official page to check before I commit.
 - End every phase with a short checkpoint: what I completed, what's next, and "Type NEXT when ready."
@@ -121,18 +121,37 @@ PHASE 4: CREATE THE PRODUCT
 Write a full product brief: concept, name, 3 variations, colour palette (hex codes), fonts (free ones), all wording or content, file specs, and format (PDF, PNG, Canva template link, spreadsheet). Then give me step-by-step build instructions in the free tool I choose, plus the exact AI prompts to use for each piece of content. Finish with a quality checklist (spelling, resolution, print-ready sizes, mobile view, file names). Remind me to follow copyright and licence rules: no copyrighted characters, brands or lyrics; check the current Canva (or other tool) content licence for selling templates; make my design original and meaningfully modified; follow each platform's AI-content rules.
 
 PHASE 5: PACKAGE AND LIST
-Write: 5 title options, the full description, keywords and tags, a pricing recommendation with launch price versus regular price, a bundle idea, mockup and preview image instructions, delivery file setup, a short licence and refund policy, and a thank-you message with a request for a review.
+Write: 5 title options, the full description, a pricing recommendation with launch price versus regular price, a bundle idea, mockup and preview image instructions, delivery file setup, a short licence and refund policy, and a thank-you message with a request for a review. Then walk me through publishing the listing on my chosen platform, step by step.
 
-PHASE 6: TRAFFIC PLAN (THE PART MOST BEGINNERS SKIP)
-Sales need visitors. Build me a 30-day plan using free channels that fit my product (Etsy search, Pinterest, Instagram Reels, TikTok, YouTube Shorts, relevant Facebook or Reddit communities where allowed, and a free email list). Give me: a weekly schedule, 10 ready-to-post content ideas with hooks and captions, a lead magnet idea to collect emails, and simple rules for posting without spamming. Adapt it to my time per day.
+PHASE 6: SEO FOR MY LISTING
+Ask which platform I'm listing on (Etsy, Gumroad, Payhip, Selar, my own website, or another). Then:
+1. Explain how discovery works on THAT platform. For example, Etsy has its own search engine driven by titles, tags, attributes and early sales; Gumroad and Payhip have little internal search, so my traffic mostly comes from Google and social media, which means my product page needs Google SEO.
+2. Show me how to research keywords for free: Etsy and Google autocomplete, "People also ask", Pinterest search suggestions, Google Trends, and competitor titles. Give me a table with columns: keyword, buyer intent, competition estimate, where to use it.
+3. Write my final SEO package: title (main keyword first, natural wording), all tags or keywords the platform allows, the first two lines of the description, image alt text, file names, and category/attributes.
+4. Give me an SEO checklist and a 2-week review routine: what numbers to check (views, favorites or clicks, sales) and what to change if they're low.
+Rules: no keyword stuffing, no misleading titles, no fake reviews.
 
-PHASE 7: HONEST INCOME MATH
+PHASE 7: TRAFFIC PLAN (THE PART MOST BEGINNERS SKIP)
+Sales need visitors. Build me a 30-day plan using free channels that fit my product (platform search, Pinterest, Instagram Reels, TikTok, YouTube Shorts, relevant Facebook or Reddit communities where allowed, and a free email list). Give me: a weekly schedule, 10 ready-to-post content ideas with hooks and captions, a lead magnet idea to collect emails, and simple rules for posting without spamming. Adapt it to my time per day.
+
+PHASE 8: INSTAGRAM GROWTH SYSTEM
+Ask me about my niche, target country and how much time I have. Then build:
+1. Profile setup: a keyword-rich name field, a bio formula (who I help + result + link), highlights, and profile link.
+2. Three or four content pillars tied to my product.
+3. A hook library: 15 hooks for Reels and carousels, and a simple structure (hook in the first 3 seconds, one clear value point, a call to action).
+4. A weekly schedule: Reels, carousels and stories, sized to my available time.
+5. Rules for reach: what to optimize (watch time, saves, shares, comments and profile visits, not likes), keyword-rich captions and alt text (Instagram search works like SEO), and a small set of relevant hashtags.
+6. A 20-minute daily engagement routine (replying to comments and DMs, genuine comments in my niche).
+7. A weekly analytics review: which posts got the most reach, saves, shares and link clicks, and how to repeat what worked.
+Be honest: nobody can guarantee a post goes viral. My goal is consistent testing and improving. Explain that growth usually takes weeks to months, and remind me not to buy followers or use fake engagement, which can get accounts restricted.
+
+PHASE 9: HONEST INCOME MATH
 Teach me: Revenue = visitors x conversion rate x price. Give typical ranges as ESTIMATES, labelled clearly, and have me plug in my own numbers. Show 3 scenarios (slow, average, strong) and how many products or how much traffic each requires. Never present these as promises.
 
-PHASE 8: TRACK AND FIX
+PHASE 10: TRACK AND FIX
 Give me a weekly review template. Diagnose problems: low views means fix hooks or SEO; views but no clicks means fix thumbnail or title; clicks but no sales means fix price, preview or description. Tell me what to change first.
 
-PHASE 9: SCALE AND STAY SAFE
+PHASE 11: SCALE AND STAY SAFE
 Help me expand into bundles, variations, seasonal products and a product line. Cover basics: customer support reply templates, keeping sales records, checking local tax and legal rules (tell me to confirm with a local professional), and not making unrealistic earnings claims in my marketing.
 
 If I get stuck at any point, ask what went wrong and give me the smallest next action.

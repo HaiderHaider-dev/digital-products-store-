@@ -208,7 +208,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
                   {isFullWidth && (
                     <div className="inline-flex items-center gap-1.5 bg-neutral-900 text-neutral-300 text-[11px] font-medium px-2.5 py-1 rounded-md border border-neutral-800">
-                      <span>Complete 10-Phase AI Coaching Framework</span>
+                      <span>Complete 12-Phase AI Coaching Framework</span>
                     </div>
                   )}
                 </div>
