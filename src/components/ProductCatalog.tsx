@@ -142,24 +142,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
             </button>
           );
         })}
-
-        {/* Bundle button */}
-        <button
-          onClick={() => {
-            if (isAdmin) {
-              // Admin: download all
-              PRODUCTS.forEach(async (p) => {
-                await downloadPromptAsZip(p);
-              });
-            } else {
-              setShowBundlePayment(true);
-            }
-          }}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#E58A36]/10 text-[#E58A36] hover:bg-[#E58A36]/20 rounded-md transition-colors cursor-pointer"
-        >
-          <Package className="w-3.5 h-3.5" />
-          <span>All {STORE_CONFIG.bundleProductCount} for ${STORE_CONFIG.bundlePrice}</span>
-        </button>
       </div>
 
       {/* Products Grid */}
