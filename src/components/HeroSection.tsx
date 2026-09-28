@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import gsap from 'gsap';
 import { SlideData } from '../types';
 import { useFrameScrubber } from '../hooks/useFrameScrubber';
 import { useFramePreloader } from '../hooks/useFramePreloader';
@@ -31,8 +32,59 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onScrollDown,
 }) => {
   const heroRef = useRef<HTMLElement>(null);
+  const kickerRef = useRef<HTMLParagraphElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
   const { isLoaded, progress, frames } = useFramePreloader();
   const { currentFrame } = useFrameScrubber(heroRef);
+
+  // High-performance GSAP typography reveal animation on slide changes
+  useEffect(() => {
+    if (!heroRef.current) return;
+
+    const ctx = gsap.context(() => {
+      // 1. Tagline kicker tracking reveal
+      if (kickerRef.current) {
+        gsap.fromTo(
+          kickerRef.current,
+          { opacity: 0, y: -10, letterSpacing: '0.35em' },
+          { opacity: 1, y: 0, letterSpacing: '0.24em', duration: 0.5, ease: 'power2.out' }
+        );
+      }
+
+      // 2. Staggered headline lines entrance
+      if (headlineRef.current) {
+        const spans = headlineRef.current.querySelectorAll('span');
+        gsap.fromTo(
+          spans,
+          { opacity: 0, y: 22, skewY: 1.5 },
+          { opacity: 1, y: 0, skewY: 0, duration: 0.6, stagger: 0.07, ease: 'power3.out' }
+        );
+      }
+
+      // 3. Subtitle description fade-up
+      if (descRef.current) {
+        gsap.fromTo(
+          descRef.current,
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.55, delay: 0.18, ease: 'power2.out' }
+        );
+      }
+
+      // 4. CTA Button back-pop
+      if (ctaRef.current) {
+        gsap.fromTo(
+          ctaRef.current,
+          { opacity: 0, scale: 0.94, y: 10 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.5, delay: 0.28, ease: 'back.out(1.5)' }
+        );
+      }
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, [currentSlide.id]);
 
   return (
     <section
@@ -67,8 +119,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <div className="hidden lg:block absolute top-0 bottom-0 right-0 w-[22%] bg-gradient-to-l from-black/60 to-transparent pointer-events-none z-10" />
           </div>
         ) : (
-          /* Loading State */
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-20">
+          /* Fast Loading Indicator */
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-20 bg-black">
             <div className="relative w-16 h-16">
               <div className="absolute inset-0 rounded-full border-2 border-[#E58A36]/20" />
               <svg className="absolute inset-0 w-16 h-16 -rotate-90" viewBox="0 0 64 64">
@@ -82,7 +134,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   strokeLinecap="round"
                   strokeDasharray={`${Math.PI * 60}`}
                   strokeDashoffset={`${Math.PI * 60 * (1 - progress)}`}
-                  style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+                  style={{ transition: 'stroke-dashoffset 0.2s ease' }}
                 />
               </svg>
               <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-[#E58A36] tracking-wider">
@@ -114,41 +166,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           
           {/* ── LEFT COLUMN (Headline, Description, CTA) ── */}
           <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-end lg:justify-center">
-            {/* Text sits directly on the background — no box/card wrapper */}
             <div className="max-w-xl">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentSlide.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              <div key={currentSlide.id}>
+                {/* Kicker Tagline with GSAP ref */}
+                <p ref={kickerRef} className="text-[10px] sm:text-[11px] md:text-[12px] font-semibold tracking-[0.24em] text-[#E58A36] uppercase mb-2.5 sm:mb-4">
+                  {currentSlide.kicker}
+                </p>
+
+                {/* Main Responsive Headline with GSAP ref */}
+                <h1
+                  ref={headlineRef}
+                  className="text-[28px] sm:text-[46px] md:text-[56px] lg:text-[68px] xl:text-[78px] 2xl:text-[84px] font-extrabold tracking-[-0.035em] leading-[1.02] sm:leading-[0.98] text-white"
+                  style={{ fontFamily: "'Montserrat', sans-serif" }}
                 >
-                  {/* Kicker Tagline */}
-                  <p className="text-[10px] sm:text-[11px] md:text-[12px] font-semibold tracking-[0.24em] text-[#E58A36] uppercase mb-2.5 sm:mb-4">
-                    {currentSlide.kicker}
-                  </p>
+                  <span className="block">{currentSlide.titleLine1}</span>
+                  <span className="block">{currentSlide.titleLine2}</span>
+                  <span className="block text-[#F4A143]">{currentSlide.highlightWord}</span>
+                </h1>
 
-                  {/* Main Responsive Headline */}
-                  <h1
-                    className="text-[28px] sm:text-[46px] md:text-[56px] lg:text-[68px] xl:text-[78px] 2xl:text-[84px] font-extrabold tracking-[-0.035em] leading-[1.02] sm:leading-[0.98] text-white"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
-                  >
-                    <span className="block">{currentSlide.titleLine1}</span>
-                    <span className="block">{currentSlide.titleLine2}</span>
-                    <span className="block text-[#F4A143]">{currentSlide.highlightWord}</span>
-                  </h1>
+                {/* Description with GSAP ref */}
+                <p ref={descRef} className="hidden sm:block mt-3 sm:mt-5 md:mt-6 text-neutral-300 lg:text-neutral-400 text-[12.5px] sm:text-[14px] md:text-[15px] font-normal leading-[1.6] max-w-xs sm:max-w-md">
+                  {currentSlide.description}
+                </p>
+              </div>
 
-                  {/* Description — hidden on very small screens to save space, visible from sm up */}
-                  <p className="hidden sm:block mt-3 sm:mt-5 md:mt-6 text-neutral-300 lg:text-neutral-400 text-[12.5px] sm:text-[14px] md:text-[15px] font-normal leading-[1.6] max-w-xs sm:max-w-md">
-                    {currentSlide.description}
-                  </p>
-
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Primary CTA Button */}
-              <div className="mt-3 sm:mt-7 md:mt-8 flex flex-wrap items-center gap-4">
+              {/* Primary CTA Button with GSAP ref */}
+              <div ref={ctaRef} className="mt-3 sm:mt-7 md:mt-8 flex flex-wrap items-center gap-4">
                 <button
                   onClick={onExploreStore}
                   className="group inline-flex items-center gap-2.5 bg-[#F79A39] hover:bg-[#ffaa4c] active:bg-[#e0892c] text-black font-semibold text-[12.5px] sm:text-[13.5px] px-5 sm:px-7 py-2.5 sm:py-3 rounded-full transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-[0_4px_22px_rgba(247,154,57,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-[#F79A39] cursor-pointer"

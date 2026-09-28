@@ -1,11 +1,9 @@
 /**
  * CharacterCanvas
  * 
- * High-performance canvas renderer for the character frame sequence.
- * Draws the frame image to fill the entire canvas using "cover" logic
- * (like CSS object-fit: cover) so the frame fully covers the hero section.
- * 
- * No flipping — the frame sequence itself contains both left/right head poses.
+ * High-performance canvas renderer for character frame sequences.
+ * Uses smart nearest-frame fallback so the canvas renders instantly
+ * without waiting for 100% of frames to download.
  */
 
 import React, { useRef, useEffect, useCallback } from 'react';
@@ -17,6 +15,33 @@ interface CharacterCanvasProps {
   style?: React.CSSProperties;
 }
 
+function getBestFrame(frames: HTMLImageElement[], targetIndex: number): HTMLImageElement | null {
+  if (!frames || frames.length === 0) return null;
+
+  // 1. Direct hit
+  const exact = frames[targetIndex];
+  if (exact && exact.complete && exact.naturalWidth > 0) {
+    return exact;
+  }
+
+  // 2. Search outwards for the nearest available loaded frame
+  let offset = 1;
+  const maxOffset = Math.max(targetIndex, frames.length - targetIndex);
+  while (offset <= maxOffset) {
+    const prev = targetIndex - offset;
+    if (prev >= 0 && frames[prev] && frames[prev].complete && frames[prev].naturalWidth > 0) {
+      return frames[prev];
+    }
+    const next = targetIndex + offset;
+    if (next < frames.length && frames[next] && frames[next].complete && frames[next].naturalWidth > 0) {
+      return frames[next];
+    }
+    offset++;
+  }
+
+  return null;
+}
+
 export const CharacterCanvas: React.FC<CharacterCanvasProps> = ({
   frames,
   currentFrame,
@@ -25,25 +50,25 @@ export const CharacterCanvas: React.FC<CharacterCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastFrameRef = useRef<number>(-1);
+  const lastDrawnImgRef = useRef<HTMLImageElement | null>(null);
 
   const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    
+
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    const img = frames[frameIndex];
-    if (!img || !img.complete || img.naturalWidth === 0) return;
+    const img = getBestFrame(frames, frameIndex);
+    if (!img) return;
 
-    // Only redraw if frame actually changed
-    if (lastFrameRef.current === frameIndex) return;
-    lastFrameRef.current = frameIndex;
+    // Avoid unnecessary duplicate draws of the exact same image
+    if (lastDrawnImgRef.current === img && canvas.width > 0) return;
+    lastDrawnImgRef.current = img;
 
-    // Match canvas pixel dimensions to its CSS display size (DPR-aware)
-    const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x for perf
+    // Match canvas pixel dimensions to display size (DPR-aware)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const displayW = container.clientWidth;
     const displayH = container.clientHeight;
     const canvasW = Math.round(displayW * dpr);
@@ -54,8 +79,7 @@ export const CharacterCanvas: React.FC<CharacterCanvasProps> = ({
       canvas.height = canvasH;
     }
 
-    // "object-fit: cover" logic — scale image to fill, then crop
-    // On portrait (mobile), bias crop upward so the character stays visible
+    // Cover logic (object-fit: cover)
     const imgW = img.naturalWidth;
     const imgH = img.naturalHeight;
     const imgAspect = imgW / imgH;
@@ -64,40 +88,32 @@ export const CharacterCanvas: React.FC<CharacterCanvasProps> = ({
     let drawW: number, drawH: number, drawX: number, drawY: number;
 
     if (canvasAspect > imgAspect) {
-      // Canvas is wider than image → fit width, crop top/bottom
       drawW = canvasW;
       drawH = canvasW / imgAspect;
       drawX = 0;
       drawY = (canvasH - drawH) / 2;
     } else {
-      // Canvas is taller than image (portrait/mobile) → fit height, crop sides
-      // Bias the vertical offset: show character from ~15% down instead of dead-center
-      // This keeps the character's head/body in frame
       drawH = canvasH;
       drawW = canvasH * imgAspect;
       drawX = (canvasW - drawW) / 2;
-      // Slight upward bias: shift image up by 10% of the overflow
       const verticalOverflow = drawH - canvasH;
       drawY = -(verticalOverflow * 0.1);
     }
 
-    // Clear and draw
     ctx.clearRect(0, 0, canvasW, canvasH);
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
   }, [frames]);
 
-  // Redraw on frame change
   useEffect(() => {
     drawFrame(currentFrame);
   }, [currentFrame, drawFrame]);
 
-  // Handle container resize — redraw at new dimensions
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const resizeObserver = new ResizeObserver(() => {
-      lastFrameRef.current = -1; // Force redraw
+      lastDrawnImgRef.current = null;
       drawFrame(currentFrame);
     });
 
