@@ -7,7 +7,7 @@ import {
 import { Product } from '../types';
 import { PRODUCTS } from '../data/storeData';
 import { downloadPromptAsZip, downloadBundleAsZip } from '../utils/downloadPrompt';
-import { sendOrderEmails, generateUniqueOrderPin } from '../services/emailService';
+import { sendOrderEmails, generateUniqueOrderPin, saveOrderToLocalStorage, markOrderAsDownloaded } from '../services/emailService';
 import { useAdminAccess } from '../hooks/useAdminAccess';
 
 // ═══════════════════════════════════════════
@@ -48,6 +48,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
   const [userEmail, setUserEmail] = useState<string>('');
   const [wiseRefId, setWiseRefId] = useState<string>('');
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [orderId, setOrderId] = useState<string>('');
   
   // Generated PIN & Unlock State
   const [generatedPin, setGeneratedPin] = useState<string>('');
@@ -68,7 +69,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
     setTimeout(() => setCopiedField(null), 2500);
   };
 
-  // Step 1 Submit: Move to Wise Details
+  // Step 1 Submit: Log email session & Move to Wise Details
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userEmail || !userEmail.includes('@')) {
@@ -76,6 +77,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
       return;
     }
     setErrorMessage('');
+    
+    // Create initial order record with status EMAIL_ENTERED so Admin tracks this buyer immediately!
+    const newId = `V-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+    setOrderId(newId);
+
+    saveOrderToLocalStorage({
+      id: newId,
+      userEmail: userEmail.trim(),
+      productTitle: title,
+      price,
+      wiseRefId: 'PENDING_STEP2',
+      generatedPin: 'PENDING',
+      timestamp: new Date().toLocaleString(),
+      isBundle,
+      isAdminTest: isAdmin,
+      status: 'EMAIL_ENTERED',
+    });
+
     setStep(2);
   };
 
@@ -96,15 +115,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
       setGeneratedPin(pin);
       setEnteredPin(pin); // Pre-fill PIN for smooth 1-click download
 
-      // Log & Email dispatch (tagged with isAdmin flag so testing orders do not pollute real revenue)
-      await sendOrderEmails(userEmail, product, isBundle, price, wiseRefId, pin, isAdmin);
+      // Log & Email dispatch
+      await sendOrderEmails(userEmail, product, isBundle, price, wiseRefId, pin, isAdmin, orderId);
 
       setIsVerifying(false);
       setStep(4);
     }, 1800);
   };
 
-  // Step 4 Submit: Validate PIN & Trigger Instant ZIP Download
+  // Step 4 Submit: Validate PIN & Trigger Instant ZIP Download to computer
   const handleUnlockAndDownload = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -122,6 +141,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
         await downloadBundleAsZip(PRODUCTS);
       } else if (product) {
         await downloadPromptAsZip(product);
+      }
+
+      // Mark order as downloaded so Admin dashboard displays 'CLAIMED_DOWNLOAD'
+      if (orderId) {
+        markOrderAsDownloaded(orderId);
       }
 
       setIsProcessingDownload(false);
@@ -202,9 +226,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Payment Verified & ZIP Downloaded!</h3>
+                <h3 className="text-lg font-bold text-white">Payment Verified & Prompt Saved to Computer!</h3>
                 <p className="text-xs text-neutral-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
-                  Your prompt file has been downloaded directly to your computer. A confirmation has been registered for <strong className="text-white">{userEmail}</strong>.
+                  Your prompt file has been downloaded directly to your computer. Order receipt saved for <strong className="text-white">{userEmail}</strong>.
                 </p>
               </div>
 
@@ -214,36 +238,41 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
                   <span className="text-white font-mono">{isBundle ? 'V-Digital-Complete-Prompt-Bundle.zip' : `${product?.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.zip`}</span>
                 </div>
                 <div className="flex items-center justify-between text-neutral-400">
+                  <span>Buyer Gmail/Email:</span>
+                  <span className="text-white font-mono">{userEmail}</span>
+                </div>
+                <div className="flex items-center justify-between text-neutral-400">
                   <span>Wise Ref ID:</span>
                   <span className="text-white font-mono">{wiseRefId}</span>
                 </div>
                 <div className="flex items-center justify-between text-neutral-400">
-                  <span>Auto-Generated PIN:</span>
+                  <span>Verification PIN:</span>
                   <span className="text-[#E58A36] font-mono font-bold">{generatedPin}</span>
                 </div>
                 <div className="flex items-center justify-between text-neutral-400">
-                  <span>Verification Status:</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> AUTO-VERIFIED
+                  <span>Download Status:</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1 font-mono">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> PROMPT DOWNLOADED TO COMPUTER
                   </span>
                 </div>
               </div>
 
               <div className="pt-2 flex flex-col gap-2">
                 <button
-                  onClick={() => {
-                    if (isBundle) downloadBundleAsZip(PRODUCTS);
-                    else if (product) downloadPromptAsZip(product);
+                  onClick={async () => {
+                    if (isBundle) await downloadBundleAsZip(PRODUCTS);
+                    else if (product) await downloadPromptAsZip(product);
+                    if (orderId) markOrderAsDownloaded(orderId);
                   }}
-                  className="w-full py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer border border-neutral-700"
                 >
-                  <Download className="w-4 h-4 text-[#E58A36]" /> Re-Download ZIP File
+                  <Download className="w-4 h-4 text-[#E58A36]" /> Re-Download Prompt File (ZIP)
                 </button>
                 <button
                   onClick={onClose}
                   className="w-full py-2.5 bg-[#E58A36] hover:bg-[#F29543] text-black font-bold text-xs rounded-xl transition-colors cursor-pointer"
                 >
-                  Done
+                  Close & Done
                 </button>
               </div>
             </div>
@@ -299,61 +328,70 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
             <div className="space-y-4">
               <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
                     <CreditCard className="w-4 h-4 text-[#E58A36]" /> Wise Transfer Details (SadaPay)
                   </p>
-                  <span className="text-[10px] bg-[#E58A36]/20 text-[#E58A36] font-bold px-2 py-0.5 rounded">
+                  <span className="text-[10px] bg-[#E58A36]/20 text-[#E58A36] font-bold px-2.5 py-0.5 rounded-full border border-[#E58A36]/30">
                     ${price} USD
                   </span>
                 </div>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Go to <a href="https://wise.com" target="_blank" rel="noopener noreferrer" className="text-[#E58A36] underline hover:text-[#F29543]">Wise.com</a> and transfer <strong className="text-white">${price} USD</strong> using the exact bank details below:
+                
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Open <a href="https://wise.com/send" target="_blank" rel="noopener noreferrer" className="text-[#E58A36] underline font-bold hover:text-[#F29543]">Wise.com</a> or Wise app and send <strong className="text-white">${price} USD</strong> using the bank details below:
                 </p>
 
-                <div className="bg-black border border-neutral-800 rounded-lg divide-y divide-neutral-800 text-xs">
+                <div className="bg-black border border-neutral-800 rounded-xl divide-y divide-neutral-800 text-xs">
                   {[
-                    { label: 'Bank Name', value: STORE_CONFIG.bankName, key: 'bank' },
-                    { label: 'Account Name', value: STORE_CONFIG.accountName, key: 'name' },
+                    { label: 'BANK NAME', value: STORE_CONFIG.bankName, key: 'bank' },
+                    { label: 'ACCOUNT NAME', value: STORE_CONFIG.accountName, key: 'name' },
                     { label: 'IBAN', value: STORE_CONFIG.iban, key: 'iban' },
-                    { label: 'Amount', value: `$${price} USD`, key: 'amount' },
+                    { label: 'AMOUNT TO SEND', value: `$${price} USD`, key: 'amount' },
                   ].map((item) => (
-                    <div key={item.key} className="flex items-center justify-between px-3 py-2.5">
+                    <div key={item.key} className="flex items-center justify-between px-3.5 py-2.5">
                       <div>
-                        <span className="text-neutral-500 block text-[10px] uppercase tracking-wider">{item.label}</span>
-                        <span className="text-white font-mono font-medium">{item.value}</span>
+                        <span className="text-neutral-500 block text-[9px] font-bold uppercase tracking-wider">{item.label}</span>
+                        <span className="text-white font-mono font-bold text-xs">{item.value}</span>
                       </div>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleCopy(item.value, item.key); }}
-                        className="text-neutral-500 hover:text-[#E58A36] transition-colors cursor-pointer p-1"
+                        className="text-neutral-400 hover:text-[#E58A36] bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 px-2 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
                         title={`Copy ${item.label}`}
                       >
                         {copiedField === item.key ? (
-                          <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                            <CheckCheck className="w-3.5 h-3.5" /> Copied!
+                          </span>
                         ) : (
-                          <Copy className="w-3.5 h-3.5" />
+                          <span className="flex items-center gap-1">
+                            <Copy className="w-3.5 h-3.5" /> Copy
+                          </span>
                         )}
                       </button>
                     </div>
                   ))}
                 </div>
+              </div>
 
+              {/* CENTERED GO TO WISE.COM DIRECT BUTTON (Right above Submit Proof button as requested) */}
+              <div className="pt-1 space-y-2.5">
                 <a
                   href="https://wise.com/send"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#E58A36] hover:text-[#F29543] transition-colors"
+                  className="w-full py-3.5 bg-neutral-900 hover:bg-neutral-800 text-[#E58A36] border border-[#E58A36]/60 hover:border-[#E58A36] font-bold text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer text-center"
                 >
-                  Open Wise.com Transfer Page <ExternalLink className="w-3 h-3" />
+                  <span>🚀 Go to Wise.com to Send Payment (${price} USD)</span>
+                  <ExternalLink className="w-4 h-4" />
                 </a>
-              </div>
 
-              <button
-                onClick={() => setStep(3)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#E58A36] to-[#F29543] hover:opacity-95 text-black font-bold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>I've Sent Payment — Submit Proof & Get PIN</span> →
-              </button>
+                <button
+                  onClick={() => setStep(3)}
+                  className="w-full py-3.5 bg-gradient-to-r from-[#E58A36] to-[#F29543] hover:opacity-95 text-black font-bold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>I've Sent Payment — Submit Proof & Get PIN</span> →
+                </button>
+              </div>
             </div>
           ) : step === 3 ? (
             /* ══════════════════════════════════════════ */
@@ -450,7 +488,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
                   </span>
                 </div>
                 <p className="text-[10px] text-neutral-400">
-                  A copy of this PIN and order receipt has been sent to <strong className="text-white">{userEmail}</strong>.
+                  Order receipt registered for <strong className="text-white">{userEmail}</strong>.
                 </p>
               </div>
 
@@ -488,12 +526,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ product, isBundle = 
                 {isProcessingDownload ? (
                   <>
                     <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    <span>Downloading ZIP File...</span>
+                    <span>Downloading ZIP File to Computer...</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span>Auto-Fill PIN & Download ZIP Now</span>
+                    <span>Auto-Fill PIN & Download Prompt ZIP Now</span>
                   </>
                 )}
               </button>

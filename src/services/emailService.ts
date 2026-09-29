@@ -28,7 +28,8 @@ export interface OrderRecord {
   timestamp: string;
   isBundle: boolean;
   isAdminTest?: boolean;
-  status: 'VERIFIED_AUTO' | 'CLAIMED_DOWNLOAD';
+  status: 'EMAIL_ENTERED' | 'PROOF_SUBMITTED' | 'VERIFIED_AUTO' | 'CLAIMED_DOWNLOAD';
+  downloadedAt?: string;
 }
 
 /**
@@ -46,16 +47,42 @@ export function generateUniqueOrderPin(userEmail: string, wiseRefId: string): st
 }
 
 /**
- * Saves order to browser localStorage for local order tracking.
+ * Saves or updates order in browser localStorage for local order tracking.
  */
 export function saveOrderToLocalStorage(order: OrderRecord): void {
   try {
     const existingStr = localStorage.getItem('v_store_orders');
-    const orders: OrderRecord[] = existingStr ? JSON.parse(existingStr) : [];
-    orders.unshift(order);
+    let orders: OrderRecord[] = existingStr ? JSON.parse(existingStr) : [];
+    
+    // Check if order with same ID or pending email session exists
+    const existingIndex = orders.findIndex((o) => o.id === order.id || (o.userEmail === order.userEmail && o.productTitle === order.productTitle && o.status === 'EMAIL_ENTERED'));
+    if (existingIndex >= 0) {
+      orders[existingIndex] = { ...orders[existingIndex], ...order };
+    } else {
+      orders.unshift(order);
+    }
     localStorage.setItem('v_store_orders', JSON.stringify(orders));
   } catch (err) {
     console.error('Failed to save order to localStorage:', err);
+  }
+}
+
+/**
+ * Marks an existing order as downloaded.
+ */
+export function markOrderAsDownloaded(orderId: string): void {
+  try {
+    const existingStr = localStorage.getItem('v_store_orders');
+    if (!existingStr) return;
+    let orders: OrderRecord[] = JSON.parse(existingStr);
+    const orderIndex = orders.findIndex((o) => o.id === orderId);
+    if (orderIndex >= 0) {
+      orders[orderIndex].status = 'CLAIMED_DOWNLOAD';
+      orders[orderIndex].downloadedAt = new Date().toLocaleString();
+      localStorage.setItem('v_store_orders', JSON.stringify(orders));
+    }
+  } catch (err) {
+    console.error('Failed to mark order as downloaded:', err);
   }
 }
 
@@ -92,14 +119,15 @@ export async function sendOrderEmails(
   price: number,
   wiseRefId: string,
   generatedPin: string,
-  isAdminTest: boolean = false
+  isAdminTest: boolean = false,
+  orderIdInput?: string
 ): Promise<{ success: boolean; message: string }> {
   const title = isBundle ? 'Complete AI Prompt Bundle' : product?.title || 'AI Prompt';
   const promptText = isBundle
     ? 'All 12+ AI Prompts included in your ZIP bundle.'
     : product?.promptPreview || '';
 
-  const orderId = `V-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+  const orderId = orderIdInput || `V-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
   const timestamp = new Date().toLocaleString();
 
   // 1. Save order locally
